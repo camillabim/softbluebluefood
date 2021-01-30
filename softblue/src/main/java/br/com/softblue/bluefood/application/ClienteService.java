@@ -15,8 +15,33 @@ public class ClienteService {
 	@Autowired //PARA USAR A instancia de clienteRepository
 	private ClienteRepository clienteRepository;
 	
-	public void saveCliente(Cliente cliente) {
+	public void saveCliente(Cliente cliente) throws ValidationException{
+		if(!validateEmail(cliente.getEmail(), cliente.getId())) {
+			throw new ValidationException("O email está duplicado");
+		}
+		if(cliente.getId() != null) { //estou editando o cliente
+			Cliente clienteDB = clienteRepository.findById(cliente.getId()).orElseThrow();//pego no banco a versao atualizada
+			cliente.setSenha(clienteDB.getSenha());
+			
+		}else {
+			cliente.encryptPassword();
+		}
+		
 		clienteRepository.save(cliente);
+	}
+	
+	private boolean validateEmail(String email, Integer id) {
+		Cliente cliente = clienteRepository.findByEmail(email);
+		if(cliente != null) {
+			if(id == null) {
+				return false;
+			}
+			if(!cliente.getId().equals(id)) {
+				return false;
+			}
+			
+		}
+		return true;
 	}
 	
 }
